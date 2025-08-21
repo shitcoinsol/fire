@@ -155,12 +155,12 @@
   <!-- top ticker -->
   <div class="ticker" id="ticker" title="클릭하면 주소가 복사됩니다">
     <span class="label">FIRE:</span>
-    <span class="addr" id="addr">TBA</span>
+    <span class="addr" id="addr">E4YpeWisaEDZdkAq1ytcKdk6HxMwKBbacSpJpdwYC777</span>
   </div>
 
   <main>
     <img class="flame" src="fire.gif" alt="burning flame for $FIRE" />
-    <p class="caption"><strong>0 $FIRE</strong> has been burned away by god's judgment.</p>
+    <p class="caption"><strong>30M $FIRE</strong> has been burned away by god's judgment.</p>
   </main>
 
   <div class="actions">
@@ -203,7 +203,7 @@
 
   <script>
     // address copy + silent save
-    const TOKEN_ADDRESS = 'TBA';
+    const TOKEN_ADDRESS = 'E4YpeWisaEDZdkAq1ytcKdk6HxMwKBbacSpJpdwYC777';
     const ticker = document.getElementById('ticker');
     ticker.addEventListener('click', async () => {
       try{ await navigator.clipboard.writeText(TOKEN_ADDRESS); }catch(e){}
