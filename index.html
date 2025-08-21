@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>$FIRE</title>
+  <style>
+    :root{
+      --bg:#000;
+      --ink:#c7c7c7;
+      --fire-1:#ffeb99;   /* light */
+      --fire-2:#ff9f1a;   /* mid */
+      --fire-3:#ff3d00;   /* hot */
+      --ring:rgba(255,153,0,.35);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      background:var(--bg);
+      color:var(--ink);
+      font:15px/1.45 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans KR", Helvetica, Arial, Apple Color Emoji, Segoe UI Emoji;
+      display:grid;
+      grid-template-rows:auto 1fr auto;
+      overflow-x:hidden;
+    }
+
+    /* ===== Background video ===== */
+    .bg-video{
+      position:fixed; inset:0; width:100%; height:100%;
+      object-fit:cover; z-index:0; filter:brightness(.5);
+    }
+    .bg-scrim{ position:fixed; inset:0;
+      background:radial-gradient(80vmax 80vmax at 50% 60%, rgba(0,0,0,.2), rgba(0,0,0,.65) 60%);
+      z-index:0;
+    }
+
+    /* ===== Top centered ticker (pill) ===== */
+    .ticker{
+      position:relative; z-index:2;
+      margin:16px auto 0; /* centered at very top */
+      padding:10px 16px;
+      width:max-content;
+      user-select:none; cursor:copy;
+      text-transform:uppercase; letter-spacing:.5px;
+      display:flex; gap:8px; align-items:center;
+      background:#1d1f22cc;
+      border:1px solid #2a2d31;
+      border-radius:999px;
+      box-shadow:0 4px 14px rgba(0,0,0,.35), inset 0 0 0 1px rgba(255,255,255,.03);
+      transition:transform .15s ease, box-shadow .2s ease, border-color .2s ease, background .2s ease;
+      backdrop-filter: blur(6px);
+    }
+    .ticker:hover{
+      background:#22252acc;
+      border-color:rgba(255,159,26,.45);
+      box-shadow:0 6px 22px rgba(255,120,0,.18), 0 0 0 2px rgba(255,159,26,.12);
+      transform:translateY(-1px);
+    }
+    .ticker .label{
+      font-weight:800;
+      background:linear-gradient(180deg, var(--fire-1), var(--fire-2) 60%, var(--fire-3));
+      -webkit-background-clip:text; background-clip:text; color:transparent;
+      text-shadow:0 0 18px var(--ring), 0 0 30px rgba(255,72,0,.25);
+      animation:flicker 2.2s infinite steps(60);
+    }
+    .ticker .addr{ color:#9aa0a6 }
+    @keyframes flicker{
+      0%,19%,21%,23%,80%,100%{filter:brightness(1)}
+      20%,22%,24%{filter:brightness(1.25)}
+      81%{filter:brightness(.9)}
+    }
+
+    /* ===== Center content ===== */
+    main{
+      position:relative; z-index:1;
+      display:grid; place-items:center; padding:10vh 16px 4vh;
+      text-align:center;
+    }
+    .flame{
+      width:min(64vw, 360px); height:auto; display:block; margin:auto;
+      filter:drop-shadow(0 0 12px rgba(255,159,26,.9)) drop-shadow(0 0 28px rgba(255,100,0,.35));
+      border-radius:24px;
+    }
+    .caption{ margin-top:20px; font-size:14px; color:#eee; text-shadow:0 1px 2px rgba(0,0,0,.6); }
+    .caption strong{ color:#ff9f1a; }
+
+    /* ===== Round action buttons ===== */
+    .actions{
+      position:relative; z-index:1;
+      display:flex; gap:18px; justify-content:center; align-items:center;
+      padding:0 0 36px;
+    }
+    .btn{
+      width:60px; height:60px; border-radius:50%;
+      display:flex; align-items:center; justify-content:center;
+      font-size:12px; font-weight:700; text-transform:lowercase; letter-spacing:.3px;
+      color:#e6e6e6; background:rgba(255,255,255,.06);
+      border:1px solid rgba(255,159,26,.35);
+      cursor:pointer;
+      transition: transform .12s ease, color .2s ease, box-shadow .2s ease, background .2s ease, border-color .2s ease;
+      text-decoration:none;
+      backdrop-filter: blur(4px);
+    }
+    .btn:hover{
+      background:rgba(255,159,26,.16); color:#fff;
+      transform:translateY(-2px);
+      box-shadow:0 0 12px rgba(255,120,0,.35);
+      border-color:rgba(255,159,26,.6);
+    }
+    .btn:focus-visible{ outline:none; box-shadow:0 0 0 2px var(--fire-3); }
+
+    /* ===== Modal (burn) ===== */
+    .overlay{ position:fixed; inset:0; background:rgba(0,0,0,.6); display:none; z-index:30; }
+    .overlay.show{ display:block; }
+    .modal{ position:fixed; inset:0; display:grid; place-items:center; z-index:40; pointer-events:none; }
+    .panel{
+      pointer-events:auto; width:min(960px, 92vw); max-height:84vh; overflow:auto;
+      background:linear-gradient(180deg, rgba(25,25,25,.96), rgba(12,12,12,.98));
+      border:1px solid rgba(255,120,0,.25);
+      border-radius:20px; padding:18px 18px 22px; color:#e6e6e6;
+      box-shadow:0 20px 80px rgba(255,70,0,.25), inset 0 0 60px rgba(255,60,0,.06);
+      transform:translateY(12px) scale(.98); opacity:0; transition:.2s ease;
+    }
+    .overlay.show + .modal .panel{ transform:none; opacity:1; }
+    .panel-header{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:8px; border-bottom:1px dashed rgba(255,120,0,.25); padding-bottom:8px; }
+    .title{ font-weight:800; letter-spacing:.4px; }
+    .title .em{ color:#ff9f1a }
+    .x{ background:transparent; color:#aaa; border:0; font-size:18px; cursor:pointer; padding:8px; border-radius:10px; }
+    .x:hover{ color:#fff; background:rgba(255,120,0,.08); }
+    table{ width:100%; border-collapse:separate; border-spacing:0; font-size:13px; }
+    thead th{ position:sticky; top:0; z-index:1; text-align:left; font-weight:700; padding:12px 10px; background:rgba(255,80,0,.08); color:#ffd9a3; border-bottom:1px solid rgba(255,120,0,.25); backdrop-filter:blur(6px); }
+    tbody td{ padding:10px; border-bottom:1px dashed rgba(255,120,0,.14); color:#ddd; }
+    tbody tr:hover{ background:rgba(255,90,0,.06); }
+    .badge{ display:inline-block; padding:2px 8px; border-radius:999px; font-size:11px; font-weight:700; letter-spacing:.3px; color:#160900; background:linear-gradient(180deg, var(--fire-1), var(--fire-2)); box-shadow:0 0 18px var(--ring); }
+    .mono{ font-variant-numeric:tabular-nums; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
+
+    @media (max-width:560px){
+      .btn{ width:52px; height:52px; font-size:11px; }
+    }
+  </style>
+</head>
+<body>
+  <!-- background video & scrim -->
+  <video class="bg-video" src="bg.mp4" autoplay loop muted playsinline preload="auto"></video>
+  <div class="bg-scrim" aria-hidden="true"></div>
+
+  <!-- top ticker -->
+  <div class="ticker" id="ticker" title="클릭하면 주소가 복사됩니다">
+    <span class="label">FIRE:</span>
+    <span class="addr" id="addr">TBA</span>
+  </div>
+
+  <main>
+    <img class="flame" src="fire.gif" alt="burning flame for $FIRE" />
+    <p class="caption"><strong>0 $FIRE</strong> has been burned away by god's judgment.</p>
+  </main>
+
+  <div class="actions">
+    <a class="btn" href="https://x.com/judgmentfire" target="_blank" rel="noopener">X</a>
+    <button class="btn" id="burnBtn" type="button">burn</button>
+  </div>
+
+  <!-- burn modal -->
+  <div class="overlay" id="overlay"></div>
+  <div class="modal" aria-hidden="true" role="dialog" aria-labelledby="burnTitle" aria-modal="true">
+    <section class="panel" role="document">
+      <header class="panel-header">
+        <div class="title" id="burnTitle">burned away by <span class="em">god's judgment</span></div>
+        <button class="x" id="closeModal" aria-label="닫기">✕</button>
+      </header>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Burn</th>
+              <th>Burn Begins (UTC)</th>
+              <th>Status</th>
+              <th>Burned Supply</th>
+              <th>Total $FIRE Supply</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="mono">#1</td>
+              <td>TBA</td> <!-- 시간 -->
+              <td><span class="badge">NotYet</span></td>
+              <td class="mono"></td> <!-- 번드서플라이 -->
+              <td class="mono"></td> <!-- 토탈파이어 -->
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    // address copy + silent save
+    const TOKEN_ADDRESS = 'TBA';
+    const ticker = document.getElementById('ticker');
+    ticker.addEventListener('click', async () => {
+      try{ await navigator.clipboard.writeText(TOKEN_ADDRESS); }catch(e){}
+      try{ localStorage.setItem('FIRE_TOKEN', TOKEN_ADDRESS); }catch(e){}
+      // no visual feedback
+    });
+
+    // modal controls
+    const overlay = document.getElementById('overlay');
+    const burnBtn = document.getElementById('burnBtn');
+    const closeBtn = document.getElementById('closeModal');
+    const modal = document.querySelector('.modal');
+
+    function openModal(){ overlay.classList.add('show'); modal.setAttribute('aria-hidden','false'); }
+    function closeModal(){ overlay.classList.remove('show'); modal.setAttribute('aria-hidden','true'); }
+
+    burnBtn.addEventListener('click', openModal);
+    overlay.addEventListener('click', closeModal);
+    closeBtn.addEventListener('click', closeModal);
+    window.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closeModal(); });
+  </script>
+</body>
+</html>
