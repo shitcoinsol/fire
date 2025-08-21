@@ -30,7 +30,13 @@
     .bg-video{
       position:fixed; inset:0; width:100%; height:100%;
       object-fit:cover; z-index:0; filter:brightness(.5);
+
+      /* ▼ 추가: 로딩 전에는 안 보이게, 준비되면 페이드인 */
+      opacity:0;
+      transition: opacity .4s ease;
     }
+    .bg-video.is-ready{ opacity:1; }
+
     .bg-scrim{ position:fixed; inset:0;
       background:radial-gradient(80vmax 80vmax at 50% 60%, rgba(0,0,0,.2), rgba(0,0,0,.65) 60%);
       z-index:0;
@@ -218,6 +224,34 @@
     overlay.addEventListener('click', closeModal);
     closeBtn.addEventListener('click', closeModal);
     window.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closeModal(); });
+
+    /* =========================
+       배경 비디오 페이드인 처리
+       - 로딩 전: 검은 배경만 보임 (body 배경색)
+       - canplay 되면 .is-ready 추가 → 페이드인
+       - 자동재생 막히면 이벤트가 오지 않아 끝까지 검은 배경
+    ========================== */
+    const bgVideo = document.querySelector('.bg-video');
+
+    // 준비되면 보이기
+    const reveal = () => bgVideo.classList.add('is-ready');
+
+    // canplay가 가장 무난
+    bgVideo.addEventListener('canplay', reveal, { once:true });
+
+    // 일부 브라우저에서 canplay 이전에 충분한 버퍼가 생기면 readyState로 백업
+    const tryRevealIfReady = () => {
+      if (bgVideo.readyState >= 3) reveal();
+      else requestAnimationFrame(tryRevealIfReady);
+    };
+    // 네트워크가 충분히 빠를 때 초기 페인트 직후 체크
+    requestAnimationFrame(tryRevealIfReady);
+
+    // 자동재생 시도 (실패해도 묵살, 검은 배경 유지)
+    const p = bgVideo.play?.();
+    if (p && typeof p.then === 'function') {
+      p.then(()=>{/* ok */}).catch(()=>{/* autoplay blocked → keep black */});
+    }
   </script>
 </body>
 </html>
